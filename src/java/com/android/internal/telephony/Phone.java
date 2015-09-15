@@ -51,6 +51,7 @@ import android.telephony.CellLocation;
 import android.telephony.ClientRequestStats;
 import android.telephony.DataFailCause;
 import android.telephony.ImsiEncryptionInfo;
+import android.telephony.PhoneNumberUtils;
 import android.telephony.PhoneStateListener;
 import android.telephony.PhysicalChannelConfig;
 import android.telephony.RadioAccessFamily;
@@ -4228,5 +4229,9 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
             pw.flush();
             pw.println("++++++++++++++++++++++++++++++++");
         }
+    }
+
+    public boolean isEmergencyNumber(String address) {
+        return PhoneNumberUtils.isEmergencyNumber(getSubId(), address);
     }
 }
