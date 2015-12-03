@@ -1584,7 +1584,8 @@ public class DcTracker extends Handler {
         if (!TextUtils.isEmpty(reason)) {
             disableMeteredOnly = reason.equals(Phone.REASON_DATA_SPECIFIC_DISABLED) ||
                     reason.equals(Phone.REASON_ROAMING_ON) ||
-                    reason.equals(Phone.REASON_CARRIER_ACTION_DISABLE_METERED_APN);
+                    reason.equals(Phone.REASON_CARRIER_ACTION_DISABLE_METERED_APN) ||
+                    reason.equals(Phone.REASON_SINGLE_PDN_ARBITRATION);
         }
 
         for (ApnContext apnContext : mApnContexts.values()) {
