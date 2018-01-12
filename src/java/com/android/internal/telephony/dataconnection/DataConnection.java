@@ -22,6 +22,10 @@ import static android.net.NetworkPolicyManager.OVERRIDE_UNMETERED;
 import android.annotation.IntDef;
 import android.annotation.Nullable;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.KeepalivePacketData;
 import android.net.LinkAddress;
@@ -116,6 +120,9 @@ public class DataConnection extends StateMachine {
 
     private static final String RAT_NAME_5G = "nr";
     private static final String RAT_NAME_EVDO = "evdo";
+
+    private static final String ACTION_DDS_SWITCH_DONE
+            = "org.codeaurora.intent.action.ACTION_DDS_SWITCH_DONE";
 
     /**
      * The data connection is not being or been handovered. Note this is the state for the source
@@ -280,6 +287,8 @@ public class DataConnection extends StateMachine {
     private final Map<ApnContext, ConnectionParams> mApnContexts = new ConcurrentHashMap<>();
     PendingIntent mReconnectIntent = null;
 
+    private boolean mRegistered = false;
+
 
     // ***** Event codes for driving the state machine, package visible for Dcc
     static final int BASE = Protocol.BASE_DATA_CONNECTION;
@@ -308,9 +317,10 @@ public class DataConnection extends StateMachine {
     static final int EVENT_RESET = BASE + 24;
     static final int EVENT_REEVALUATE_RESTRICTED_STATE = BASE + 25;
     static final int EVENT_REEVALUATE_DATA_CONNECTION_PROPERTIES = BASE + 26;
+    static final int EVENT_DATA_CONNECTION_DDS_SWITCHED = BASE + 27;
 
     private static final int CMD_TO_STRING_COUNT =
-            EVENT_REEVALUATE_DATA_CONNECTION_PROPERTIES - BASE + 1;
+            EVENT_DATA_CONNECTION_DDS_SWITCHED - BASE + 1;
 
     private static String[] sCmdToString = new String[CMD_TO_STRING_COUNT];
     static {
@@ -342,6 +352,8 @@ public class DataConnection extends StateMachine {
         sCmdToString[EVENT_KEEPALIVE_STOP_REQUEST - BASE] = "EVENT_KEEPALIVE_STOP_REQUEST";
         sCmdToString[EVENT_LINK_CAPACITY_CHANGED - BASE] = "EVENT_LINK_CAPACITY_CHANGED";
         sCmdToString[EVENT_RESET - BASE] = "EVENT_RESET";
+        sCmdToString[EVENT_DATA_CONNECTION_DDS_SWITCHED - BASE] =
+                "EVENT_DATA_CONNECTION_DDS_SWITCHED";
         sCmdToString[EVENT_REEVALUATE_RESTRICTED_STATE - BASE] =
                 "EVENT_REEVALUATE_RESTRICTED_STATE";
         sCmdToString[EVENT_REEVALUATE_DATA_CONNECTION_PROPERTIES - BASE] =
@@ -556,6 +568,35 @@ public class DataConnection extends StateMachine {
             if (DBG) log("MTU set by config resource to: " + mtu);
         }
     }
+
+    private boolean isApnTypeDefault() {
+        for (String type : mApnSetting.types) {
+            if (type.equals(PhoneConstants.APN_TYPE_DEFAULT)) {
+                return true;
+            } else {
+                continue;
+            }
+        }
+        return false;
+    }
+
+    /* Receiver to handle DDS change event */
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            log("mBroadcastReceiver - " + action);
+            if (action.equals(ACTION_DDS_SWITCH_DONE)) {
+                int ddsSubId = intent.getIntExtra(PhoneConstants.SUBSCRIPTION_KEY,
+                        SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+                log("got ACTION_DDS_SWITCH_DONE, new DDS = "
+                        + ddsSubId + "update network score");
+                if (mNetworkAgent != null && mPhone.getSubId() != ddsSubId) {
+                    DataConnection.this.sendMessage(DataConnection.this.
+                            obtainMessage(EVENT_DATA_CONNECTION_DDS_SWITCHED));
+                }
+            }
+        }
+    };
 
     //***** Constructor (NOTE: uses dcc.getHandler() as its Handler)
     private DataConnection(Phone phone, String tagSuffix, int id,
@@ -1592,6 +1633,12 @@ public class DataConnection extends StateMachine {
                                 msg.arg1, SocketKeepalive.ERROR_INVALID_NETWORK);
                     }
                     break;
+                case EVENT_DATA_CONNECTION_DDS_SWITCHED:
+                    if (mNetworkAgent != null) {
+                        mNetworkAgent.sendNetworkScore(50);
+                    }
+                    break;
+
                 default:
                     if (DBG) {
                         log("DcDefaultState: shouldn't happen but ignore msg.what="
@@ -1984,6 +2031,13 @@ public class DataConnection extends StateMachine {
             }
             TelephonyMetrics.getInstance().writeRilDataCallEvent(mPhone.getPhoneId(),
                     mCid, mApnSetting.getApnTypeBitmask(), RilDataCall.State.CONNECTED);
+
+            if (isApnTypeDefault() && !mRegistered) {
+                /* Start listening to the DDS change event. */
+                mPhone.getContext().registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(ACTION_DDS_SWITCH_DONE));
+                mRegistered = true;
+            }
         }
 
         @Override
@@ -2010,6 +2064,11 @@ public class DataConnection extends StateMachine {
             if (mTransportType == AccessNetworkConstants.TRANSPORT_TYPE_WWAN) {
                 mPhone.mCi.unregisterForNattKeepaliveStatus(getHandler());
                 mPhone.mCi.unregisterForLceInfo(getHandler());
+            }
+
+            if (mRegistered) {
+                mPhone.getContext().unregisterReceiver(mBroadcastReceiver);
+                mRegistered = false;
             }
 
             // If we are still owning this agent, then we should inform connectivity service the
