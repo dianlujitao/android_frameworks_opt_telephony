@@ -82,6 +82,7 @@ import com.android.internal.telephony.uicc.IccCardApplicationStatus.AppType;
 import com.android.internal.telephony.uicc.IccFileHandler;
 import com.android.internal.telephony.uicc.IccRecords;
 import com.android.internal.telephony.uicc.IsimRecords;
+import com.android.internal.telephony.uicc.SIMRecords;
 import com.android.internal.telephony.uicc.UiccCard;
 import com.android.internal.telephony.uicc.UiccCardApplication;
 import com.android.internal.telephony.uicc.UiccController;
@@ -4000,6 +4001,10 @@ public abstract class Phone extends Handler implements PhoneInternalInterface {
      **/
     public void setSimPowerState(int state, WorkSource workSource) {
         mCi.setSimCardPower(state, null, workSource);
+    }
+
+    public SIMRecords getSIMRecords() {
+        return null;
     }
 
     public void setRadioIndicationUpdateMode(int filters, int mode) {
