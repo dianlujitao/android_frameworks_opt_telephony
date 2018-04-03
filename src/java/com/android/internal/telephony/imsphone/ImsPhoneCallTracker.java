@@ -422,6 +422,7 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
     private boolean mIsViLteDataMetered = false;
     private boolean mAlwaysPlayRemoteHoldTone = false;
     private boolean mAutoRetryFailedWifiEmergencyCall = false;
+    private boolean mIgnoreResetUtCapability = false;
     // Tracks the state of our background/foreground calls while a call hold/swap operation is
     // in progress. Values listed above.
     private HoldSwapState mHoldSwitchingState = HoldSwapState.INACTIVE;
@@ -1033,6 +1034,8 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
                 CarrierConfigManager.KEY_ALWAYS_PLAY_REMOTE_HOLD_TONE_BOOL);
         mAutoRetryFailedWifiEmergencyCall = carrierConfig.getBoolean(
                 CarrierConfigManager.KEY_AUTO_RETRY_FAILED_WIFI_EMERGENCY_CALL);
+        mIgnoreResetUtCapability =  carrierConfig.getBoolean(
+                CarrierConfigManager.KEY_IGNORE_RESET_UT_CAPABILITY_BOOL);
 
         String[] mappings = carrierConfig
                 .getStringArray(CarrierConfigManager.KEY_IMS_REASONINFO_MAPPING_STRING_ARRAY);
@@ -4148,8 +4151,19 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
     private void resetImsCapabilities() {
         log("Resetting Capabilities...");
         boolean tmpIsVideoCallEnabled = isVideoCallEnabled();
-        mMmTelCapabilities = new MmTelFeature.MmTelCapabilities();
 
+        if (mIgnoreResetUtCapability) {
+            //UT capability should not be reset (for IMS deregistration and for IMS feature state
+            //not ready) and it should always depend on the modem indication for UT capability
+            mMmTelCapabilities.removeCapabilities(
+                    MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VOICE);
+            mMmTelCapabilities.removeCapabilities(
+                    MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_VIDEO);
+            mMmTelCapabilities.removeCapabilities(
+                    MmTelFeature.MmTelCapabilities.CAPABILITY_TYPE_SMS);
+        } else {
+            mMmTelCapabilities = new MmTelFeature.MmTelCapabilities();
+        }
         boolean isVideoEnabled = isVideoCallEnabled();
         if (tmpIsVideoCallEnabled != isVideoEnabled) {
             mPhone.notifyForVideoCapabilityChanged(isVideoEnabled);
