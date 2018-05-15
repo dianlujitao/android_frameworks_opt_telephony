@@ -1403,9 +1403,6 @@ public class SubscriptionController extends ISub.Stub {
 
         Uri uri = resolver.insert(SubscriptionManager.CONTENT_URI, value);
 
-        // Refresh the Cache of Active Subscription Info List
-        refreshCachedActiveSubscriptionInfoList();
-
         return uri;
     }
 
