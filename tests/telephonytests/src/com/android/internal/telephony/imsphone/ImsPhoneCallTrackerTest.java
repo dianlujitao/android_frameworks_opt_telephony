@@ -843,7 +843,7 @@ public class ImsPhoneCallTrackerTest extends TelephonyTest {
     public void testCallRestrictedDisconnect() {
         doReturn(true).when(mSST.mRestrictedState).isCsRestricted();
         assertEquals(DisconnectCause.CS_RESTRICTED, mCTUT.getDisconnectCauseFromReasonInfo(
-                new ImsReasonInfo(ImsReasonInfo.CODE_UNSPECIFIED, 0), Call.State.ACTIVE));
+                new ImsReasonInfo(ImsReasonInfo.CODE_RADIO_INTERNAL_ERROR, 0), Call.State.ACTIVE));
     }
 
     @Test
@@ -852,7 +852,8 @@ public class ImsPhoneCallTrackerTest extends TelephonyTest {
         doReturn(true).when(mSST.mRestrictedState).isCsEmergencyRestricted();
         assertEquals(DisconnectCause.CS_RESTRICTED_EMERGENCY,
                 mCTUT.getDisconnectCauseFromReasonInfo(
-                        new ImsReasonInfo(ImsReasonInfo.CODE_UNSPECIFIED, 0), Call.State.ACTIVE));
+                        new ImsReasonInfo(ImsReasonInfo.CODE_RADIO_INTERNAL_ERROR, 0),
+                        Call.State.ACTIVE));
     }
 
     @Test
@@ -861,7 +862,8 @@ public class ImsPhoneCallTrackerTest extends TelephonyTest {
         doReturn(true).when(mSST.mRestrictedState).isCsNormalRestricted();
         assertEquals(DisconnectCause.CS_RESTRICTED_NORMAL,
                 mCTUT.getDisconnectCauseFromReasonInfo(
-                        new ImsReasonInfo(ImsReasonInfo.CODE_UNSPECIFIED, 0), Call.State.ACTIVE));
+                        new ImsReasonInfo(ImsReasonInfo.CODE_RADIO_INTERNAL_ERROR, 0),
+                        Call.State.ACTIVE));
     }
 
     @Test
