@@ -87,7 +87,6 @@ public class TelephonyNetworkFactory extends NetworkFactory {
 
     private final Handler mInternalHandler;
 
-
     private static final int PRIMARY_SLOT = 0;
     private static final int SECONDARY_SLOT = 1;
 
