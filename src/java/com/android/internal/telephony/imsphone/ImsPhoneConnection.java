@@ -1107,12 +1107,6 @@ public class ImsPhoneConnection extends Connection implements
                 extras);
     }
 
-    public void onCallSessionPropertyChanged(int property) {
-        Bundle extras = new Bundle();
-        extras.putInt(android.telecom.Connection.EXTRA_CALL_PROPERTY, property);
-        onConnectionEvent(android.telecom.Connection.EVENT_CALL_PROPERTY_CHANGED, extras);
-    }
-
     public void setCurrentRttTextStream(android.telecom.Connection.RttTextStream rttTextStream) {
         synchronized (this) {
             mRttTextStream = rttTextStream;

@@ -3067,14 +3067,6 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
         }
 
         @Override
-        public void onCallSessionPropertyChanged(ImsCall imsCall, int property) {
-          ImsPhoneConnection conn = findConnection(imsCall);
-            if (conn != null) {
-                conn.onCallSessionPropertyChanged(property);
-            }
-        }
-
-        @Override
         public void onRttAudioIndicatorChanged(ImsCall imsCall, ImsStreamMediaProfile profile) {
           ImsPhoneConnection conn = findConnection(imsCall);
             if (conn != null) {
