@@ -1046,7 +1046,8 @@ public class UiccProfile extends IccCard {
 
     private boolean areReadyAppsRecordsLoaded() {
         for (UiccCardApplication app : mUiccApplications) {
-            if (app != null && isSupportedApplication(app) && app.isReady()) {
+            if (app != null && isSupportedApplication(app) && app.isReady()
+                    && !app.isAppIgnored()) {
                 IccRecords ir = app.getIccRecords();
                 if (ir == null || !ir.isLoaded()) {
                     if (VDBG) log("areReadyAppsRecordsLoaded: return false");
